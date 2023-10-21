@@ -1,7 +1,14 @@
+import math
 # returns Euclidean distance between vectors a dn b
 def euclidean(a,b):
+    distance = 0
     
-    return(dist)
+    for i,j in zip(a,b):
+        distance += (i-j) ** 2
+
+    distance = math.sqrt(distance)
+    return distance
+
         
 # returns Cosine Similarity between vectors a dn b
 def cosim(a,b):
