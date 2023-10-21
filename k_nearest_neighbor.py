@@ -41,7 +41,10 @@ class KNearestNeighbor():
                 neighbors. Can be one of 'mode', 'mean', or 'median'.
         """
         self.n_neighbors = n_neighbors
-
+        self.distanceMeasure = distance_measure
+        self.aggregator = aggregator
+        self.features = None
+        self.target = None
         raise NotImplementedError()
 
 
