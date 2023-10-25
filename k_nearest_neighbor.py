@@ -1,8 +1,8 @@
 import numpy as np 
-from .distances import euclidean_distances, manhattan_distances
-
+import pandas as pd
+from collections import Counter
 class KNearestNeighbor():    
-    def __init__(self, n_neighbors, distance_measure='euclidean', aggregator='mode'):
+    def __init__(self, n_neighbors, euclideanFunction, cosimFunction,distance_measure='euclidean', aggregator='mode'):
         """
         K-Nearest Neighbor is a straightforward algorithm that can be highly
         effective. Training time is...well...is there any training? At test time, labels for
@@ -45,7 +45,8 @@ class KNearestNeighbor():
         self.aggregator = aggregator
         self.features = None
         self.target = None
-        raise NotImplementedError()
+        self.euclideanFunction = euclideanFunction
+        self.cosimFunction = cosimFunction
 
 
     def fit(self, features, targets):
@@ -60,9 +61,19 @@ class KNearestNeighbor():
             targets {[type]} -- Target labels for each data point, shape of (n_samples, 
                 n_dimensions).
         """
-
-        raise NotImplementedError()
+        self.features = features
+        self.target = targets
         
+    def findLabel(self,targets, strategy):
+        if(strategy =="mean"):
+            return sum(targets)/len(targets)
+        
+        elif(strategy =="mode"):
+            data = Counter(targets)
+            return data.most_common(1)[0][0]
+        else:
+            sorted(targets)
+            return targets[len(targets)//2]
 
     def predict(self, features, ignore_first=False):
         """Predict from features, a numpy array of size (n_samples, n_features) Use the
@@ -86,4 +97,41 @@ class KNearestNeighbor():
             labels {np.ndarray} -- Labels for each data point, of shape (n_samples,
                 n_dimensions). This n_dimensions should be the same as n_dimensions of targets in fit function.
         """
-        raise NotImplementedError()
+                # Find the eucledian Distance for the point from each of the training value
+        distances = {}
+        labels = []
+        for i in range(len(features)):
+            a = features[i]
+
+            for j in range(len(self.features)):
+                b = self.features[j]
+                if(self.distanceMeasure == "euclidean"):
+                    distance = self.euclideanFunction(a,b)
+                else:
+                    distance = self.cosimFunction(a,b)
+                distances[j] = distance
+        
+    
+
+            # Find the K Nearest Neighnors
+            neighbors = []
+
+            for element in sorted(distances, key = distances.get):
+                if(len(neighbors) ==self.n_neighbors):
+                    break
+                neighbors.append(element)
+            
+            #neighbors2 = distances.argsort()[:self.n_neighbors]
+
+            # Assign the value based on the method of aggregation
+
+            targetNeighbors = []
+            for n in neighbors:
+                    targetNeighbors.append(self.target[n])
+
+            #targetNeighbors = pd.DataFrame(targetNeighbors)
+
+            # [9, 0, 2, 6, 8, 9, 5, 1, 3, 5]
+
+            labels.append(self.findLabel(targetNeighbors,self.aggregator))
+        return labels
