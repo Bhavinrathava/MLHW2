@@ -7,7 +7,7 @@ Things to do :
 4. Cosine Similarity - Testing - PENDING
 
 
-5. KNN Using Euclidean Distance and Cosine Similarity - PENDING
+5. KNN Using Euclidean Distance and Cosine Similarity - DONE
 6. Feature Engineering - Dimensionality Reduction / Scaling / Continuous to Binary - PENDING 
 
 7. Implememt K Means + Feature Engineer for dimensionality Reduction - PENDING
