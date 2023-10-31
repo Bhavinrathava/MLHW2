@@ -102,23 +102,36 @@ def kmeans(train,query,metric):
     xtrain, ytrain = processData(train)
     xtest, ytest = processData(query)
 
-    kmeans = KMeans(n_clusters = 10, metric = metric, euclidean = euclidean, cosim = cosim )
-    kmeans.fit(xtrain)
+    bestK = 0
+    bestAccuracy = 0
+    bestLabels = []
+    for k in range(5,20):
 
-    _, train_cluster_assignments = kmeans.predict(xtrain)
-    centroid_to_label = map_centroids_to_labels(train_cluster_assignments, ytrain)
+        kmeans = KMeans(n_clusters = k, metric = metric, euclidean = euclidean, cosim = cosim )
+        kmeans.fit(xtrain)
 
-    # Predict cluster assignments for query set
-    _, test_cluster_assignments = kmeans.predict(xtest)
-    predicted_labels = [centroid_to_label[cluster_id] for cluster_id in test_cluster_assignments]
+        _, train_cluster_assignments = kmeans.predict(xtrain)
+        centroid_to_label = map_centroids_to_labels(train_cluster_assignments, ytrain)
+
+        # Predict cluster assignments for query set
+        _, test_cluster_assignments = kmeans.predict(xtest)
+        predicted_labels = [centroid_to_label[cluster_id] for cluster_id in test_cluster_assignments]
     
-    # Compute accuracy
-    correct_predictions = sum([1 for predicted, true in zip(predicted_labels, ytest) if predicted == true])
-    accuracy = correct_predictions / len(ytest) * 100
+        # Compute accuracy
+        correct_predictions = sum([1 for predicted, true in zip(predicted_labels, ytest) if predicted == true])
+        accuracy = correct_predictions / len(ytest) * 100
+
+        print("Accuracy for k = {} is {}%".format(k, accuracy))
+
+        if(accuracy > bestAccuracy):
+            bestK = k
+            bestLabels = predicted_labels
+            bestAccuracy = accuracy
+
     #print(f"Accuracy: {accuracy:.2f}%")
     print(ytest)
 
-    return predicted_labels, accuracy
+    return bestLabels, bestAccuracy, bestK
 
 def read_data(file_name):
     
@@ -156,9 +169,10 @@ def main():
     trainData = read_data("train.csv")
     testData = read_data("valid.csv")
 
-    predicted_labels, accuracy = kmeans(trainData, testData, metric = "euclidean")
+    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean")
     
     print("Predicted Labels for test data:", predicted_labels)
+    print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans = {}".format(accuracy))
     
     knn(trainData,testData,"euclidean")
