@@ -1,5 +1,25 @@
 import math
 from k_nearest_neighbor import KNearestNeighbor
+from kmeans import KMeans
+import numpy as np
+from saample_kmeans import KMeans
+
+def map_centroids_to_labels(cluster_assignments, actual_labels):
+    # Count the labels for each cluster
+    mapping = {}
+    for cluster_id, label in zip(cluster_assignments, actual_labels):
+        if cluster_id not in mapping:
+            mapping[cluster_id] = {}
+        if label not in mapping[cluster_id]:
+            mapping[cluster_id][label] = 0
+        mapping[cluster_id][label] += 1
+
+    # Determine the most frequent label for each cluster
+    centroid_to_label = {}
+    for cluster_id, label_counts in mapping.items():
+        centroid_to_label[cluster_id] = max(label_counts, key=label_counts.get)
+        
+    return centroid_to_label
 
 # split training data into labels and features
 def processData(dataset):
@@ -12,7 +32,7 @@ def processData(dataset):
 
     return features, labels
 
-# returns Euclidean distance between vectors a dn b
+# returns Euclidean distance between vectors a and b
 def euclidean(a,b):
     distance = 0
     
@@ -25,7 +45,12 @@ def euclidean(a,b):
         
 # returns Cosine Similarity between vectors a dn b
 def cosim(a,b):
-    
+    a = np.array(a, dtype=float)
+    b = np.array(b, dtype=float)
+    dot_product = np.dot(a, b)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    dist = 1 - (dot_product / (norm_a * norm_b))
     return(dist)
 
 # returns a list of labels for the query dataset based upon labeled observations in the train dataset.
@@ -38,9 +63,9 @@ def knn(train,query,metric):
 
     # Set this value to True if you want to try out a range of K Values
     testing = False
-    
+
     if (testing == False):
-        kRange = [1]
+        kRange = [3]
     else:
         kRange = range(1,51,2)
     for k in kRange:
@@ -71,8 +96,29 @@ def knn(train,query,metric):
 # labels should be ignored in the training set
 # metric is a string specifying either "euclidean" or "cosim".  
 # All hyper-parameters should be hard-coded in the algorithm.
+
 def kmeans(train,query,metric):
-    return(labels)
+
+    xtrain, ytrain = processData(train)
+    xtest, ytest = processData(query)
+
+    kmeans = KMeans(n_clusters = 10, metric = metric, euclidean = euclidean, cosim = cosim )
+    kmeans.fit(xtrain)
+
+    _, train_cluster_assignments = kmeans.predict(xtrain)
+    centroid_to_label = map_centroids_to_labels(train_cluster_assignments, ytrain)
+
+    # Predict cluster assignments for query set
+    _, test_cluster_assignments = kmeans.predict(xtest)
+    predicted_labels = [centroid_to_label[cluster_id] for cluster_id in test_cluster_assignments]
+    
+    # Compute accuracy
+    correct_predictions = sum([1 for predicted, true in zip(predicted_labels, ytest) if predicted == true])
+    accuracy = correct_predictions / len(ytest) * 100
+    #print(f"Accuracy: {accuracy:.2f}%")
+    print(ytest)
+
+    return predicted_labels, accuracy
 
 def read_data(file_name):
     
@@ -110,6 +156,11 @@ def main():
     trainData = read_data("train.csv")
     testData = read_data("valid.csv")
 
+    predicted_labels, accuracy = kmeans(trainData, testData, metric = "euclidean")
+    
+    print("Predicted Labels for test data:", predicted_labels)
+    print("accuracy for KMeans = {}".format(accuracy))
+    
     knn(trainData,testData,"euclidean")
     
 if __name__ == "__main__":
