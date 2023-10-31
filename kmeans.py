@@ -24,7 +24,7 @@ class KMeans():
         """
         self.n_clusters = n_clusters
         self.means = None
-
+        # Sample changes
     def fit(self, features):
         """
         Fit KMeans to the given data using `self.n_clusters` number of clusters.
