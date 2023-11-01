@@ -2,7 +2,20 @@ import math
 from k_nearest_neighbor import KNearestNeighbor
 from kmeans import KMeans
 import numpy as np
+from sklearn.decomposition import PCA
 from saample_kmeans import KMeans
+import matplotlib.pyplot as plt
+
+# Function to perform PCA for dimensionality reduction
+def perform_pca(data, n_components):
+    pca = PCA(n_components=n_components)
+    reduced_data = pca.fit_transform(data)
+    return reduced_data
+
+# Function to calculate accuracy
+def calculate_accuracy(predicted_labels, true_labels):
+    correct_predictions = sum([1 for predicted, true in zip(predicted_labels, true_labels) if predicted == true])
+    return (correct_predictions / len(true_labels)) * 100
 
 def map_centroids_to_labels(cluster_assignments, actual_labels):
     # Count the labels for each cluster
@@ -74,6 +87,9 @@ def knn(train,query,metric):
         knn = KNearestNeighbor(k, metric, euclidean, cosim)
         xtrain,ytrain = processData(train)
         xtest,ytest = processData(query)
+
+        # xtrain= perform_pca(xtrain, n_components= 200)  # Apply PCA to training data
+        # xtest = perform_pca(xtest, n_components= 200)    # Apply PCA to test data
         
         knn.fit(xtrain,ytrain)
         predictedLabels = knn.predict(xtest)
@@ -102,10 +118,13 @@ def kmeans(train,query,metric):
     xtrain, ytrain = processData(train)
     xtest, ytest = processData(query)
 
+    # xtrain= perform_pca(xtrain, n_components= 200)  # Apply PCA to training data
+    # xtest = perform_pca(xtest, n_components= 200)    # Apply PCA to test data
+
     bestK = 0
     bestAccuracy = 0
     bestLabels = []
-    for k in range(5,20):
+    for k in range(19,20):
 
         kmeans = KMeans(n_clusters = k, metric = metric, euclidean = euclidean, cosim = cosim )
         kmeans.fit(xtrain)
@@ -163,20 +182,79 @@ def show(file_name,mode):
                 print(' ')
         print('LABEL: %s' % data_set[obs][0],end='')
         print(' ')
-            
+
+def visualize_pca_components(xtrain, num_components_range, num_samples=5):
+    # Choose a few sample digits
+    sample_digits = xtrain[:num_samples]
+
+    # Create a subplot for each component value
+    plt.figure(figsize=(15, 5))
+    for i, num_components in enumerate(num_components_range):
+        plt.subplot(1, len(num_components_range), i + 1)
+        plt.title(f'{num_components} Components')
+
+        # Fit PCA with the chosen number of components
+        pca = PCA(n_components=num_components)
+        pca.fit(xtrain)
+
+        # Transform and inverse transform sample digits
+        reduced_digits = pca.transform(sample_digits)
+        reconstructed_digits = pca.inverse_transform(reduced_digits)
+
+        # Display the reconstructed digits
+        for j in range(len(sample_digits)):
+            plt.imshow(reconstructed_digits[j].reshape(28, 28), cmap='gray')
+            plt.axis('off')
+        if i == 0:
+            plt.ylabel('Sample Digits')
+
+    plt.show()
+
+
+
 def main():
-    show('valid.csv','pixels')
     trainData = read_data("train.csv")
     testData = read_data("valid.csv")
 
+    # Prepare data for K-Means and KNN
+    xtrain, ytrain = processData(trainData)
+    xtest, ytest = processData(testData)
+
+
+    # # Specify a range of component values to visualize
+    # num_components_range = [20, 50, 75, 100, 150, 200, 400, 600]
+    # # Visualize PCA components
+    # visualize_pca_components(xtrain, num_components_range)
+
+    # trainData= perform_pca(xtrain, n_components= 200)  # Apply PCA to training data
+    # testData = perform_pca(xtest, n_components= 200)    # Apply PCA to test data
+
+
+    # K-Means with Euclidean distance
+    print("K-Means Results - Euclidean :")
     predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean")
-    
     print("Predicted Labels for test data:", predicted_labels)
     print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans = {}".format(accuracy))
-    
+
+    # K-Means with Cosine similarity
+    print("K-Means Results - Cosim :")
+    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "cosim")
+    print("Predicted Labels for test data:", predicted_labels)
+    print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans = {}".format(accuracy))
+
+
+    # KNN with Euclidean distance
+    print("\nK-Nearest Neighbors Results - Euclidean:")
     knn(trainData,testData,"euclidean")
-    
+
+    # KNN with Cosine similarity
+    print("K-Nearest Neighbors Results - Cosim:")
+    knn(trainData,testData,"cosim")
+
+
 if __name__ == "__main__":
     main()
-    
+        
+  
