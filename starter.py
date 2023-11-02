@@ -243,10 +243,6 @@ def main():
     # # Visualize PCA components
     # visualize_pca_components(xtrain, num_components_range)
 
-    # trainData= perform_pca(xtrain, n_components= 200)  # Apply PCA to training data
-    # testData = perform_pca(xtest, n_components= 200)    # Apply PCA to test data
-
-
     # K-Means with Euclidean distance
     print("K-Means Results - Euclidean :")
     predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean")
