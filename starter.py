@@ -34,14 +34,20 @@ def map_centroids_to_labels(cluster_assignments, actual_labels):
         
     return centroid_to_label
 
-# split training data into labels and features
 def processData(dataset):
     labels = []
     features = []
 
     for i in range(len(dataset)):
-        features.append([int(x) for x in dataset[i][1]])
-        labels.append(int(dataset[i][0]))
+        label = int(dataset[i][0])
+        grayscale_values = [int(x) for x in dataset[i][1]]
+        
+        # Map grayscale values to binary using a threshold (adjust threshold as needed)
+        threshold = 128  # Example threshold: Change this to suit your needs
+        binary_values = [1 if x > threshold else 0 for x in grayscale_values]
+        
+        features.append(binary_values)
+        labels.append(label)
 
     return features, labels
 
@@ -87,6 +93,8 @@ def knn(train,query,metric):
         knn = KNearestNeighbor(k, metric, euclidean, cosim)
         xtrain,ytrain = processData(train)
         xtest,ytest = processData(query)
+        xtrain = normalize_data(xtrain)
+        xtest = normalize_data(xtest)
 
         # xtrain= perform_pca(xtrain, n_components= 200)  # Apply PCA to training data
         # xtest = perform_pca(xtest, n_components= 200)    # Apply PCA to test data
@@ -117,6 +125,9 @@ def kmeans(train,query,metric):
 
     xtrain, ytrain = processData(train)
     xtest, ytest = processData(query)
+
+    xtrain = normalize_data(xtrain)
+    xtest = normalize_data(xtest)
 
     # xtrain= perform_pca(xtrain, n_components= 200)  # Apply PCA to training data
     # xtest = perform_pca(xtest, n_components= 200)    # Apply PCA to test data
@@ -200,7 +211,7 @@ def visualize_pca_components(xtrain, num_components_range, num_samples=5):
         # Transform and inverse transform sample digits
         reduced_digits = pca.transform(sample_digits)
         reconstructed_digits = pca.inverse_transform(reduced_digits)
-
+        
         # Display the reconstructed digits
         for j in range(len(sample_digits)):
             plt.imshow(reconstructed_digits[j].reshape(28, 28), cmap='gray')
@@ -210,16 +221,22 @@ def visualize_pca_components(xtrain, num_components_range, num_samples=5):
 
     plt.show()
 
+from sklearn.preprocessing import MinMaxScaler
+
+def normalize_data(data):
+    # Initialize the MinMaxScaler
+    scaler = MinMaxScaler()
+    data_normalized = scaler.fit_transform(data)
+    return data_normalized
 
 
 def main():
     trainData = read_data("train.csv")
     testData = read_data("valid.csv")
 
-    # Prepare data for K-Means and KNN
-    xtrain, ytrain = processData(trainData)
-    xtest, ytest = processData(testData)
-
+    # # Prepare data for K-Means and KNN
+    # xtrain, ytrain = processData(trainData)
+    # xtest, ytest = processData(testData)
 
     # # Specify a range of component values to visualize
     # num_components_range = [20, 50, 75, 100, 150, 200, 400, 600]
@@ -233,15 +250,15 @@ def main():
     # K-Means with Euclidean distance
     print("K-Means Results - Euclidean :")
     predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean")
-    print("Predicted Labels for test data:", predicted_labels)
-    print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans = {}".format(accuracy))
 
     # K-Means with Cosine similarity
     print("K-Means Results - Cosim :")
     predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "cosim")
-    print("Predicted Labels for test data:", predicted_labels)
-    print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans = {}".format(accuracy))
 
 
