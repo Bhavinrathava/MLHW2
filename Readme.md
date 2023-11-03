@@ -1,17 +1,39 @@
-Things to do :
+```
 
-1. Euclidean Distance - DONE
-2. Cosine Similarity - Done
+def CalculateSimilarity(UserMatrix):
 
-3. Testing Function - EU Distance - Done
-4. Cosine Similarity - Testing - Done
+    SimilarityMatrix ={} #Matrix storing the similarity between every pair of users
+
+    For every pair of users U1, U2 :
+        SimilarityMatrix[U1][U2] = Calculate_Cosine_Similarity(U1, U2)
+
+    return SimilarityMatrix
 
 
-5. KNN Using Euclidean Distance and Cosine Similarity - DONE
-6. Feature Engineering - Dimensionality Reduction / Scaling / Continuous to Binary - Done
+def PredictUserPreferences(TargetUser, RatingMatrix, UserSimilarityMatrix):
 
-7. Implememt K Means + Feature Engineer for dimensionality Reduction - Done (not working)
+    MovieRating = [] # Weighted Predicted Ratings of All Movies Not Watched by User
 
-8. Psuedo Code for collaborative filter - PENDING
+    For Movies Not Rated By TargetUser:
+        MovieRating[MovieNotRatedByTarget] = Sum [(Similarity[Un][TargetUser] * Rating[MovieName][Un]) for Un != TargetUser] / Sum[(SimilarityMatrix[TargetUser][Un]) for Un != TargetUser]
 
-9. Soft K Means by extending Number 7 - PENDING
+    return MovieRating
+
+
+def GenerateRecommedations(targetUser, NumRecommendations, RatingMatrix, UserSimilarityMatrix):
+    PredictedPreferences = PredictUserPreferences(targetUser, RatingMatrix, UserSimilarityMatix)
+
+    sortedPreferences = sorted(PredictedPreferences, reversed)
+
+    return sortedPreferences[:NumRecommendations]
+
+
+if __name__ == "__main__":
+    RatingMatrix = Rating Matrix of N x M -> N users and M Movies
+    SimilarityMatrix = CalculateSimiarity(UserMatrix)
+    TargetUser = "UserName"
+    NumRecommendations = int("SomeValue")
+
+    recommendations = GenerateRecommendations(TargetUser, NumRecommendations, RatingMatrix, SimilarityMatrix)
+    
+```
