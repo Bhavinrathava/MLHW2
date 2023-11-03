@@ -3,8 +3,22 @@ from k_nearest_neighbor import KNearestNeighbor
 from kmeans import KMeans
 import numpy as np
 from sklearn.decomposition import PCA
-from saample_kmeans import KMeans
+from kmeans import KMeans
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+def plot_confusion_matrix(y_true, y_pred, classes):
+    # Compute confusion matrix
+    cm = confusion_matrix(y_true, y_pred)
+    
+    # Plot confusion matrix
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=classes, yticklabels=classes)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title('Confusion Matrix')
+    plt.show()
 
 # Function to perform PCA for dimensionality reduction
 def perform_pca(data, n_components):
@@ -75,16 +89,14 @@ def cosim(a,b):
 # returns a list of labels for the query dataset based upon labeled observations in the train dataset.
 # metric is a string specifying either "euclidean" or "cosim".  
 # All hyper-parameters should be hard-coded in the algorithm.
-def knn(train,query,metric):
+def knn(train,query,metric, testing = False):
     bestK = 0
     bestAcc = 0
     bestLabels = []
 
     # Set this value to True if you want to try out a range of K Values
-    testing = False
-
     if (testing == False):
-        kRange = [3]
+        kRange = [7]
     else:
         kRange = range(1,51,2)
     for k in kRange:
@@ -102,6 +114,9 @@ def knn(train,query,metric):
         knn.fit(xtrain,ytrain)
         predictedLabels = knn.predict(xtest)
         
+        if(not testing):
+            plot_confusion_matrix(ytest, predictedLabels, [i for i in range(10)])
+
         crct = 0
 
         for l in range(len(predictedLabels)):
@@ -121,7 +136,7 @@ def knn(train,query,metric):
 # metric is a string specifying either "euclidean" or "cosim".  
 # All hyper-parameters should be hard-coded in the algorithm.
 
-def kmeans(train,query,metric,soft = False, beta = 1000):
+def kmeans(train,query,metric,soft = False, beta = 1000, testing = False, testingSoft = False):
 
     xtrain, ytrain = processData(train)
     xtest, ytest = processData(query)
@@ -135,31 +150,45 @@ def kmeans(train,query,metric,soft = False, beta = 1000):
     bestK = 0
     bestAccuracy = 0
     bestLabels = []
-    for k in range(19,20):
+    krange = [23]
 
-        kmeans = KMeans(n_clusters = k, metric = metric, euclidean = euclidean, cosim = cosim, soft=soft, beta = beta)
-        kmeans.fit(xtrain)
-
-        _, train_cluster_assignments = kmeans.predict(xtrain)
-        centroid_to_label = map_centroids_to_labels(train_cluster_assignments, ytrain)
-
-        # Predict cluster assignments for query set
-        _, test_cluster_assignments = kmeans.predict(xtest)
-        predicted_labels = [centroid_to_label[cluster_id] for cluster_id in test_cluster_assignments]
+    if(testing):
+        krange = [19]
     
-        # Compute accuracy
-        correct_predictions = sum([1 for predicted, true in zip(predicted_labels, ytest) if predicted == true])
-        accuracy = correct_predictions / len(ytest) * 100
+    for k in krange:
+        b  = [beta]
+        if(testingSoft):
+            b = range(2, 50, 2)
 
-        print("Accuracy for k = {} is {}%".format(k, accuracy))
+        for bt in b:
+                
 
-        if(accuracy > bestAccuracy):
-            bestK = k
-            bestLabels = predicted_labels
-            bestAccuracy = accuracy
+            kmeans = KMeans(n_clusters = k, metric = metric, euclidean = euclidean, cosim = cosim, soft=soft, beta = bt)
+            kmeans.fit(xtrain)
 
-    #print(f"Accuracy: {accuracy:.2f}%")
-    print(ytest)
+            _, train_cluster_assignments = kmeans.predict(xtrain)
+            centroid_to_label = map_centroids_to_labels(train_cluster_assignments, ytrain)
+
+            # Predict cluster assignments for query set
+            _, test_cluster_assignments = kmeans.predict(xtest)
+            predicted_labels = [centroid_to_label[cluster_id] for cluster_id in test_cluster_assignments]
+
+            if(not testing):
+                plot_confusion_matrix(ytest, predicted_labels, [i for i in range(10)])
+
+            # Compute accuracy
+            correct_predictions = sum([1 for predicted, true in zip(predicted_labels, ytest) if predicted == true])
+            accuracy = correct_predictions / len(ytest) * 100
+
+            print("Accuracy for k = {} , Beta = {}, is {}%".format(k,bt, accuracy))
+
+            if(accuracy > bestAccuracy):
+                bestK = k
+                bestLabels = predicted_labels
+                bestAccuracy = accuracy
+
+        #print(f"Accuracy: {accuracy:.2f}%")
+        print(ytest)
 
     return bestLabels, bestAccuracy, bestK
 
@@ -242,37 +271,98 @@ def main():
     # num_components_range = [20, 50, 75, 100, 150, 200, 400, 600]
     # # Visualize PCA components
     # visualize_pca_components(xtrain, num_components_range)
-
+    
     # K-Means with Euclidean distance
     print("K-Means Results - Euclidean :")
-    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean")
+    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean", testing=True)
     # print("Predicted Labels for test data:", predicted_labels)
     # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans = {}".format(accuracy))
 
     # K-Means with Euclidean distance for Soft K Means
     print("K-Means Results - Euclidean :")
-    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean", soft=True, beta=5)
+    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean", soft=True, beta=5, testing=True)
     # print("Predicted Labels for test data:", predicted_labels)
     # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans With Soft K Means= {}".format(accuracy))
 
     # K-Means with Cosine similarity
     print("K-Means Results - Cosim :")
-    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "cosim")
+    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "cosim", testing=True)
     # print("Predicted Labels for test data:", predicted_labels)
     # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans = {}".format(accuracy))
 
+    # K-Means with Euclidean distance for Soft K Means
+    print("K-Means Results - Cosim :")
+    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "cosim", soft=True, beta=5, testing=True)
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans With Soft K Means with Cosim= {}".format(accuracy))
 
     # KNN with Euclidean distance
     print("\nK-Nearest Neighbors Results - Euclidean:")
-    knn(trainData,testData,"euclidean")
+    knn(trainData,testData,"euclidean", testing=True)
+
+    # KNN with Cosim distance
+    print("\nK-Nearest Neighbors Results - Euclidean:")
+    knn(trainData,testData,"cosim", testing=True)
+    
+
+
+    actualTest = read_data("test.csv")
+    # KNN with Euclidean distance
+    print("\nK-Nearest Neighbors Results - Euclidean:")
+    knn(trainData,actualTest,"euclidean", testing=False)
 
     # KNN with Cosine similarity
     print("K-Nearest Neighbors Results - Cosim:")
-    knn(trainData,testData,"cosim")
+    knn(trainData,actualTest,"cosim", testing=False)
 
+        # K-Means with Euclidean distance
+    print("K-Means Results - Euclidean :")
+    predicted_labels, accuracy, k = kmeans(trainData, actualTest, metric = "euclidean")
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans = {}".format(accuracy))
+
+    # K-Means with Euclidean distance for Soft K Means
+    print("K-Means Results - Euclidean :")
+    predicted_labels, accuracy, k = kmeans(trainData, actualTest, metric = "euclidean", soft=True, beta=5)
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans With Soft K Means= {}".format(accuracy))
+
+    # K-Means with Cosine similarity
+    print("K-Means Results - Cosim :")
+    predicted_labels, accuracy, k = kmeans(trainData, actualTest, metric = "cosim")
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans = {}".format(accuracy))
+
+    # K-Means with Euclidean distance for Soft K Means
+    print("K-Means Results - Cosim :")
+    predicted_labels, accuracy, k = kmeans(trainData, actualTest, metric = "cosim", soft=True, beta=5)
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans With Soft K Means with Cosim= {}".format(accuracy))
+    
+
+    # Testing BETA Values
+    # K-Means with Euclidean distance for Soft K Means
+    print("K-Means Results - Euclidean :")
+    predicted_labels, accuracy, k = kmeans(trainData, actualTest, metric = "euclidean", soft=True, beta=5, testingSoft=True)
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans With Soft K Means= {}".format(accuracy))
+    
+    actualTest = read_data("test.csv")
+    # K-Means with Euclidean distance for 
+    print("K-Means Results - Cosim :")
+    predicted_labels, accuracy, k = kmeans(trainData, actualTest, metric = "cosim", soft=False, beta=4)
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans With Soft K Means= {}".format(accuracy))
 
 if __name__ == "__main__":
     main()
