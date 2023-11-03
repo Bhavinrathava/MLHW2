@@ -121,7 +121,7 @@ def knn(train,query,metric):
 # metric is a string specifying either "euclidean" or "cosim".  
 # All hyper-parameters should be hard-coded in the algorithm.
 
-def kmeans(train,query,metric):
+def kmeans(train,query,metric,soft = False, beta = 1000):
 
     xtrain, ytrain = processData(train)
     xtest, ytest = processData(query)
@@ -137,7 +137,7 @@ def kmeans(train,query,metric):
     bestLabels = []
     for k in range(19,20):
 
-        kmeans = KMeans(n_clusters = k, metric = metric, euclidean = euclidean, cosim = cosim )
+        kmeans = KMeans(n_clusters = k, metric = metric, euclidean = euclidean, cosim = cosim, soft=soft, beta = beta)
         kmeans.fit(xtrain)
 
         _, train_cluster_assignments = kmeans.predict(xtrain)
@@ -249,6 +249,13 @@ def main():
     # print("Predicted Labels for test data:", predicted_labels)
     # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
     print("accuracy for KMeans = {}".format(accuracy))
+
+    # K-Means with Euclidean distance for Soft K Means
+    print("K-Means Results - Euclidean :")
+    predicted_labels, accuracy, k = kmeans(trainData, testData, metric = "euclidean", soft=True, beta=5)
+    # print("Predicted Labels for test data:", predicted_labels)
+    # print("We found that we have best accuracy when k = {}, giving us accuracy of {}".format(k, accuracy))
+    print("accuracy for KMeans With Soft K Means= {}".format(accuracy))
 
     # K-Means with Cosine similarity
     print("K-Means Results - Cosim :")

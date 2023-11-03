@@ -1,12 +1,14 @@
 import numpy as np
 
 class KMeans:
-    def __init__(self, euclidean, cosim, n_clusters = 10, max_itr = 300, metric = "euclidean"):
+    def __init__(self, euclidean, cosim, n_clusters = 10, max_itr = 300, metric = "euclidean",soft = False, beta = 1000):
         self.n_clusters = n_clusters
         self.max_itr = max_itr
         self.metric = metric
         self.euclidean = euclidean
         self.cosim = cosim
+        self.beta = beta
+        self.soft = soft
 
     def _compute_distance(self,a,b):
         if self.metric == 'euclidean':
@@ -17,6 +19,10 @@ class KMeans:
             raise ValueError(f"Invalid metric {self.metric}. Supported metrics are 'euclidean' and 'cosim'.")
 
 
+    def calculate_soft_assignments(self, x):
+        # Calculate soft assignments (you can modify this for your specific Soft K-Means implementation)
+        # For example, using beta for softness parameter
+        return np.exp(-self.beta * np.array([self._compute_distance(x, centroid) for centroid in self.centroids]))
     
     def fit(self, x_train):
         # Randomly select centroids, uniformly distributed across the domain of the dataset
@@ -32,8 +38,16 @@ class KMeans:
             #sort each datapoint, assigning to nearest centroid
             sorted_points = [[] for _ in range(self.n_clusters)]
             for x in x_train:
-                dists = [self._compute_distance(x, centroid) for centroid in self.centroids]
-                centroid_idx = np.argmin(dists)
+
+                if self.soft:
+                    # Soft K-Means: Calculate soft assignments
+                    soft_assignments = self.calculate_soft_assignments(x)
+                    centroid_idx = np.argmax(soft_assignments)
+                else:
+
+                    dists = [self._compute_distance(x, centroid) for centroid in self.centroids]
+                    centroid_idx = np.argmin(dists)
+                
                 sorted_points[centroid_idx].append(x)
 
             # Push current centroids to previous, reassign centroids as mean of the points belonging to them
